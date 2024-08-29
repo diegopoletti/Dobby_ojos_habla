@@ -13,21 +13,35 @@ Este proyecto utiliza un ESP32 para controlar los ojos animatrónicos de Dobby, 
 5. Botones (para iniciar y reiniciar)
 
 ## Diagrama de Conexión Simplificado
+![image](https://github.com/user-attachments/assets/75db426c-7ac6-4806-affd-79678ffd707e)
+ESP32[ESP32]
+    SD[Módulo SD]
+    I2S[Módulo I2S]
+    S1[Servo 1<br>Párpado superior izquierdo]
+    S2[Servo 2<br>Párpado superior derecho]
+    S3[Servo 3<br>Párpado inferior izquierdo]
+    S4[Servo 4<br>Párpado inferior derecho]
+    S5[Servo 5<br>Movimiento horizontal]
+    S6[Servo 6<br>Movimiento vertical]
+    B1[Botón de inicio]
 
-```mermaid
-graph TD
-    ESP32[ESP32] --> |Pin 14| Servo1[Servo Párpado Superior Izquierdo]
-    ESP32 --> |Pin 27| Servo2[Servo Párpado Superior Derecho]
-    ESP32 --> |Pin 26| Servo3[Servo Párpado Inferior Izquierdo]
-    ESP32 --> |Pin 25| Servo4[Servo Párpado Inferior Derecho]
-    ESP32 --> |Pin 33| Servo5[Servo Movimiento Horizontal]
-    ESP32 --> |Pin 32| Servo6[Servo Movimiento Vertical]
-    ESP32 --> |Pines SPI| SD[Tarjeta SD]
-    ESP32 --> |I2S| Altavoz[Altavoz]
-    ESP32 --> |Pin 34| BotonIniciar[Botón Iniciar]
-    ESP32 --> |Pin 35| BotonReset[Botón Reset]
-```
-
+    ESP32 -->|Pin 14| S1
+    ESP32 -->|Pin 27| S2
+    ESP32 -->|Pin 12| S3
+    ESP32 -->|Pin 13| S4
+    ESP32 -->|Pin 33| S5
+    ESP32 -->|Pin 32| S6
+    
+    ESP32 -->|Pin 34| B1
+    
+    ESP32 -->|SCK - Pin 18| SD
+    ESP32 -->|MISO - Pin 19| SD
+    ESP32 -->|MOSI - Pin 23| SD
+    ESP32 -->|CS - Pin 5| SD
+    
+    ESP32 -->|BCLK - Pin 26| I2S
+    ESP32 -->|LRCLK - Pin 25| I2S
+    ESP32 -->|DIN - Pin 22| I2S
 ## Funciones Principales
 
 ### 1. Configuración Inicial (setup)
@@ -84,6 +98,7 @@ Esta función se ejecuta continuamente y controla el comportamiento de los ojos:
 2. Entra en un bucle donde realiza una secuencia de movimientos de ojos y reproducción de audio.
 3. Si no hay actividad por un tiempo, entra en modo de bajo consumo.
 4. El sistema puede ser actualizado inalámbricamente si la función OTA está habilitada.
+![image](https://github.com/user-attachments/assets/2aa25ab6-bd67-4584-8ea7-9fae92cf35f9)
 
 ## Personalización
 
