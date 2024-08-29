@@ -8,7 +8,7 @@
  * 
  */
 
-const char *version = "2.1"; // Se agrega modo dormir y botón de reinicio
+const char *version = "2.2"; // Se agrega modo dormir y botón de inicio y se sacó Reset
 #include <ESP32Servo.h> // Incluir la librería ESP32Servo ESP32Servo con versión 3.0.5 con esp32\2.0.17 con versión 3.0.? no compilará.
 #include <WiFi.h>
 #include <ESPmDNS.h>
@@ -28,12 +28,12 @@ const char *version = "2.1"; // Se agrega modo dormir y botón de reinicio
 #define CS 5     // Pin de selección de chip para SPI
 
 #define PIN_BOTON_INICIAR 34
-#define PIN_BOTON_RESET 35
+
 // Variables para el manejo del audio
 AudioGeneratorMP3 *mp3;       // Generador de audio MP3
 AudioFileSourceSD *fuente;    // Fuente de archivo de audio desde la tarjeta SD
 AudioOutputI2SNoDAC *salida;  // Salida de audio sin DAC
-int totalRespuestasAleatorias = 2; //Cantidad de archivos de audio que posee para respuestas aleatorias 
+int totalRespuestasAleatorias = 3; //Cantidad de archivos de audio que posee para respuestas aleatorias 
 //#include <TickTwo.h>
 bool OTAhabilitado = false; // variable que se utilizara para inabilitar la función OTA si no se pudo lograr la conexion WIFI
 // Configuración de la red WiFi
@@ -43,8 +43,8 @@ const char *password = ""; // Contraseña de la red WiFi
 // Definir los pines donde están conectados los servos
 const int servoPin1 = 14; // Servo del párpado superior izquierdo. Abre sentido Anti  Horario
 const int servoPin2 = 27; // Servo del párpado superior derecho .Abre sentido Horario
-const int servoPin3 = 26; // Servo del párpado inferior izquierdo. Abre sentido Horario
-const int servoPin4 = 25; // Servo del párpado inferior derecho. abre sentido Antihorario
+const int servoPin3 = 12; // Servo del párpado inferior izquierdo. Abre sentido Horario
+const int servoPin4 = 13; // Servo del párpado inferior derecho. abre sentido Antihorario
 const int servoPin5 = 33; // Servo de movimiento horizontal de ambos ojos +- 15º
 const int servoPin6 = 32; // Servo de movimiento vertical de ambos ojos +-15º
 
@@ -73,10 +73,11 @@ Servo servo5; // Servo de movimiento horizontal de ambos ojos
 Servo servo6; // Servo de movimiento vertical de ambos ojos
 
 // Variables para el modo dormir
-const unsigned long TIEMPO_ANTES_DE_DORMIR = 600000; // 10 minutos en milisegundos
-const unsigned long TIEMPO_Entre_Audios = 30000; // 30 segundo en milisegundos
+const unsigned long TIEMPO_ANTES_DE_DORMIR = 30000; //600000; // 10 minutos en milisegundos
+const unsigned long TIEMPO_Entre_Audios = 10000; // 30 segundo en milisegundos
 
 unsigned long ultimaActividad = 0;
+unsigned long ActividadInicio = 0;
 
 /**
  * @brief Configura los pines, servicios y realiza la inicialización del sistema
@@ -99,7 +100,6 @@ void setup() {
   salida->SetOutputModeMono(true); // Configura la salida de audio en modo monoaural
     // Configurar pines de botones
   pinMode(PIN_BOTON_INICIAR, INPUT_PULLUP);
-  pinMode(PIN_BOTON_RESET, INPUT_PULLUP);
   
   // Configurar interrupción para despertar
   esp_sleep_enable_ext0_wakeup((gpio_num_t)PIN_BOTON_INICIAR, LOW);
@@ -114,27 +114,23 @@ void setup() {
   servo4.attach(servoPin4, 500, 2400);
   servo5.attach(servoPin5, 500, 2400);
   servo6.attach(servoPin6, 500, 2400);
-  delay(1000);
+  yield();
   TodosCentro(); //Pone todos los cervos en cero, ojos centrados y parpados cerrados
     Serial.println("Todo al centro"); 
-
-  delay(1000);
-  
-  delay(1000);
-  
-  ultimaActividad = millis();
+  yield();
+  reproducirIntroduccion();
+    ultimaActividad = millis();
+    ActividadInicio = ultimaActividad;
 }
 
 void loop() {
   OTAhabilitado ? ArduinoOTA.handle() : yield(); // Maneja la actualización OTA, solo si la condición OTAhabilitado es Verdadera
  yield(); // Pasa el control a otras tareas
-   if (digitalRead(PIN_BOTON_RESET) == LOW) {
-    ESP.restart();
-  }
-  
-  if (millis() - ultimaActividad > TIEMPO_ANTES_DE_DORMIR) {
+    
+  if (millis() - ActividadInicio > TIEMPO_ANTES_DE_DORMIR) {
     if (!mp3->isRunning()) {
       entrarModoSueno();
+      Serial.println("entrar en modo sueño");
     }
   }
 
@@ -147,10 +143,7 @@ void loop() {
       Serial.println("Archivo Cerrado"); // Mensaje de archivo cerrado
       yield(); 
     }
-  } else { // Si el audio no está en reproducción
-
-
-
+  } else { // Si el audio no está en reproducciónservo1.attach(servoPin1, 500, 2400);
   abrirParpados();
   Serial.println("Abrir Parpados"); 
   yield();
@@ -182,12 +175,17 @@ void loop() {
   mirarCentro(); OTAhabilitado ? ArduinoOTA.handle() : yield(); // Maneja la actualización OTA, solo si la condición OTAhabilitado es Verdadera
   delay(1000);
   cerrarParpados();
- ultimaActividad = millis();
+  delay(1000);
+  abrirParpados();
+  Serial.println("Abrir Parpados"); 
+  yield();
+  delay(2000);
  if (millis() - ultimaActividad > TIEMPO_Entre_Audios) {
-    if (!mp3->isRunning()) {
+    
+      Serial.println("reproducirRespuestaAleatoria"); 
       reproducirRespuestaAleatoria();
       
-    }
+    
   }
   
 
@@ -341,17 +339,22 @@ void movimientoCircularAntihorario() {
 
 void reproducirAudio(const char *ruta) {
   if (!SD.exists(ruta)) { // Verifica si el archivo existe en la tarjeta SD
+    Serial.println(ruta);
     Serial.println("Archivo no encontrado"); // Mensaje de error si el archivo no existe
     return; // Termina la función si el archivo no existe
   }
 
   if (!fuente->open(ruta)) { // Abre el archivo de audio
+     Serial.println(ruta);
     Serial.println("Error al abrir el archivo"); // Mensaje de error si no se puede abrir el archivo
     return; // Termina la función si no se puede abrir el archivo
   }
 
   yield(); // Pasa el control a otras tareas
+  Serial.println("Reproduciendo :");
+  Serial.println(ruta);
   mp3->begin(fuente, salida); // Inicia la reproducción del audio
+  ultimaActividad = millis();
 }
 
 void reproducirRespuestaAleatoria() {
@@ -364,6 +367,7 @@ void reproducirRespuestaAleatoria() {
 }
 
 void reproducirIntroduccion() {
+  abrirParpados();
   const char *archivoIntroduccion = "/intro.mp3"; // Ruta del archivo de introducción
   reproducirAudio(archivoIntroduccion); // Llama a la función de reproducción de audio genérica
   while (mp3->isRunning()){
