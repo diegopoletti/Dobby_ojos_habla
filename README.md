@@ -12,32 +12,24 @@ Este proyecto utiliza un ESP32 para controlar los ojos animatrónicos de Dobby, 
 4. Altavoz (para reproducir sonidos)
 5. Botones (para iniciar y reiniciar)
 
-## Diagrama de Conexión Simplificado
-![image](https://github.com/user-attachments/assets/75db426c-7ac6-4806-affd-79678ffd707e)
-ESP32[ESP32]
-    SD[Módulo SD]
-    I2S[Módulo I2S]
-    S1[Servo 1<br>Párpado superior izquierdo]
-    S2[Servo 2<br>Párpado superior derecho]
-    S3[Servo 3<br>Párpado inferior izquierdo]
-    S4[Servo 4<br>Párpado inferior derecho]
-    S5[Servo 5<br>Movimiento horizontal]
-    S6[Servo 6<br>Movimiento vertical]
-    B1[Botón de inicio]
+### Diagrama de Conexiones
 
-    ESP32 -->|Pin 14| S1
-    ESP32 -->|Pin 27| S2
-    ESP32 -->|Pin 12| S3
-    ESP32 -->|Pin 13| S4
-    ESP32 -->|Pin 33| S5
-    ESP32 -->|Pin 32| S6
-    
-    ESP32 -->|Pin 34| B1
-    
-    ESP32 -->|SCK - Pin 18| SD
-    ESP32 -->|MISO - Pin 19| SD
-    ESP32 -->|MOSI - Pin 23| SD
-    ESP32 -->|CS - Pin 5| SD
+#### Hardware y Comunicaciones
+- **ESP32** conectado a la tarjeta microSD (SD card) mediante el pin `CS`, para manejo de archivos y ejecución del código.
+  - Pin `SCK` (18): Clock del protocolo SPI, comunica en paralelo con la tarjeta SD.
+  - Pin `MISO` (19): Datos salientes de los otros componentes al dispositivo que lo manda.
+  - Pin `MOSI` (23): Datos entrantes de los otros componentes a este dispositivo.
+- **WiFi**: Conexión a través del modulo WiFi del ESP32 para la comunicación y actualización OTA.
+- **Audio**: Uso de bibliotecas para manejo de audio: MP3, SD card y salida I2S, proporcionando funcionalidad de reproducción de música desde tarjeta SD.
+
+#### Servos y Mecánica
+- **Servos** controlados mediante pines del ESP32:
+  - `servoPin1` (13): Párpado superior izquierdo.
+  - `servoPin2` (12): Párpado superior derecho.
+  - `servoPin3` (14): Párpado inferior izquierdo.
+  - `servoPin4` (27): Párpado inferior derecho.
+  - `servoPin5` (33): Movimiento horizontal de ojos.
+  - `servoPin6` (32): Movimiento vertical de ojos.
     
     ESP32 -->|BCLK - Pin 26| I2S
     ESP32 -->|LRCLK - Pin 25| I2S
